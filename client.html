@@ -1,0 +1,22 @@
+<script src='/socket.io/socket.io.js'></script>
+<script src='lib/client.js'></script>
+
+<script>
+    var socket = new io.Socket(),
+        test;
+
+    socket.on('connect', function() {
+        test = MULTIO.make(socket);
+
+        test.on({
+            hello: function(msg) {
+                alert(msg);
+            },
+            goodbye: function(url) {
+                window.location = url;
+            }
+        });
+    });
+
+    socket.connect();
+</script>
