@@ -44,7 +44,14 @@ var MULTIO = {};
         var callbacks = {},
             mapCallback,
             extractArgs,
-            that = this;
+            that = this,
+            
+            on,
+            exec,
+            clientSend,
+            serverSend,
+            clientFire,
+            serverFire;
             
 
         mapCallback = function (name, callback) {
@@ -63,7 +70,7 @@ var MULTIO = {};
         ////////////////////////////////////////////////////////////////////////////
         // PUBLIC FUNCTIONS
 
-        that.on = function () {
+        on = function () {
             var callbacksToAdd = {},
                 name;
 
@@ -94,13 +101,13 @@ var MULTIO = {};
         };
 
 
-        that.exec = function (name) {
+        exec = function (name) {
             var callbackArgs = extractArgs(arguments);
             callbacks[name].apply(that, callbackArgs);
             return that;
         };
 
-        that.send = function (name) {
+        clientSend = function (name) {
             var callbackArgs = extractArgs(arguments);
             socket.send({
                 name: name,
@@ -109,20 +116,48 @@ var MULTIO = {};
             return that;
         };
 
-        that.fire = function (name) {
-            that.exec.apply(that, arguments);
-            that.send.apply(that, arguments);
+        serverSend = function (name) {
+        };
+
+        clientFire = function (name) {
+            exec.apply(that, arguments);
+            clientSend.apply(that, arguments);
             return that;
+        };
+
+        serverFire = function (name) {
         };
 
         // PUBLIC FUNCTIONS
         ////////////////////////////////////////////////////////////////////////////
 
-        socket.on('message', function (data) {
-            that.exec.apply(that, [data.name, data.args]);
-        });
+        // Determine which type of multio instance we are (client- or server-side)
+        //  based on a simple glance at the given socket's members:
+        if (typeof socket.port !== 'undefined') {
+            socket.on('message', function (data) {
+                exec.apply(that, [data.name, data.args]);
+            });
 
-        return that;
+            return {
+                on: on,
+                exec: exec,
+                send: clientSend,
+                fire: clientFire
+            };
+        } else if (typeof socket.server !== 'undefined') {
+            socket.addListener('onClientMessage', function (data, client) {
+                exec.apply(that, [data.name, data.args]);
+            }); 
+
+            return {
+                on: on,
+                exec: exec,
+                send: serverSend,
+                fire: serverFire
+            };
+        } else {
+            throw {}; // TODO
+        }
     };
 
 }());
