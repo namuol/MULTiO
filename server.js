@@ -1,5 +1,20 @@
-/*jslint white: true, onevar: true, undef: true, newcap: true, nomen: true, regexp: true, plusplus: true, bitwise: true, strict: true, maxerr: 50, indent: 4 */
-/*global require console setTimeout*/
+/*jslint 
+    white: true, 
+    onevar: true, 
+    undef: true, 
+    newcap: true, 
+    nomen: true, 
+    regexp: true, 
+    plusplus: true, 
+    bitwise: true, 
+    strict: true, 
+    maxerr: 50, 
+    indent: 4 */
+
+/*global
+    require 
+    console 
+    setTimeout */
 
 "use strict";
 
@@ -9,7 +24,6 @@ connect     = require('connect'),
 fs          = require('fs'),
 io          = require('socket.io'),
 sanitizer   = require('sanitizer'),
-_           = require('underscore'),
 config      = {
     port: 12345
 };

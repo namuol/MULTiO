@@ -6,13 +6,13 @@
         test;
 
     socket.on('connect', function() {
-        test = MULTIO.make(socket);
+        test = MULTIO.listen(socket);
 
         test.on({
-            hello: function(msg) {
+            hello: function (msg) {
                 alert(msg);
             },
-            goodbye: function(url) {
+            goodbye: function (url) {
                 window.location = url;
             }
         });
