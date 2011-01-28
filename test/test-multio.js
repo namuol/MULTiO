@@ -45,10 +45,18 @@ buildSmocket = function (type) {
         };
     } else if (type === 'serverSide') {
         smocket.server = {};
-        smocket.addListener = smocket.on;
-    } else if (type === 'serverSideClient') {
-        smocket.sentData = [];
         smocket.broadcastData = [];
+        smocket.sentData = [];
+        smocket.addListener = smocket.on;
+        smocket.send = function (data) {
+            smocket.sentData.push(data);
+        };
+        smocket.broadcast = function (data, except) {
+            smocket.broadcastData.push({data: data, except: except});
+        };
+    } else if (type === 'serverSideClient') {
+        smocket.broadcastData = [];
+        smocket.sentData = [];
         smocket.send = function (data) {
             smocket.sentData.push(data);
         };
@@ -59,7 +67,7 @@ buildSmocket = function (type) {
     return smocket;
 };
 
-exports['Client-Side Socket Event Received (listener.on) (mocked)'] = function (test) {
+exports['Client-Side Socket Event Received (listener.on)'] = function (test) {
     var smocket = buildSmocket('clientSide'),
         listener,
         result,
@@ -86,7 +94,7 @@ exports['Client-Side Socket Event Received (listener.on) (mocked)'] = function (
 
 };
 
-exports['Client-Side Socket Event Sent (listener.send) (mocked)'] = function (test) {
+exports['Client-Side Socket Event Sent (listener.send)'] = function (test) {
     var smocket = buildSmocket('clientSide'),
         listener;
 
@@ -97,6 +105,7 @@ exports['Client-Side Socket Event Sent (listener.send) (mocked)'] = function (te
     listener.send('testMe', 42);
 
     setTimeout(function () {
+        test.equal(smocket.sentData.length, 1);
         test.equal(smocket.sentData[0].name, 'testMe');
         test.equal(smocket.sentData[0].args.length, 1);
         test.equal(smocket.sentData[0].args[0], 42);
@@ -105,7 +114,7 @@ exports['Client-Side Socket Event Sent (listener.send) (mocked)'] = function (te
 
 };
 
-exports['Client-Side Socket Event Fired (listener.fire) (mocked)'] = function (test) {
+exports['Client-Side Socket Event Fired (listener.fire)'] = function (test) {
     var smocket = buildSmocket('clientSide'),
         result,
         listener;
@@ -119,6 +128,7 @@ exports['Client-Side Socket Event Fired (listener.fire) (mocked)'] = function (t
     listener.fire('testMe', 42);
 
     setTimeout(function () {
+        test.equal(smocket.sentData.length, 1);
         test.equal(smocket.sentData[0].name, 'testMe');
         test.equal(smocket.sentData[0].args.length, 1);
         test.equal(smocket.sentData[0].args[0], 42);
@@ -128,7 +138,7 @@ exports['Client-Side Socket Event Fired (listener.fire) (mocked)'] = function (t
 
 };
 
-exports['Server-Side Socket Event Received (listener.on) (mocked)'] = function (test) {
+exports['Server-Side Socket Event Received (listener.on)'] = function (test) {
     var smocket = buildSmocket('serverSide'),
         listener,
         expectedClient = {},
@@ -158,7 +168,7 @@ exports['Server-Side Socket Event Received (listener.on) (mocked)'] = function (
 
 };
 
-exports['Server-Side Client Connected (server.on(\'$connection\', ...) (mocked)'] = function (test) {
+exports['Server-Side Client Connected (server.on(\'$connection\', ...)'] = function (test) {
     var smocket = buildSmocket('serverSide'),
         clientSmocket = buildSmocket('serverSideClient'),
         expectedSessionId = 42,
@@ -182,7 +192,7 @@ exports['Server-Side Client Connected (server.on(\'$connection\', ...) (mocked)'
     }, 50);
 };
 
-exports['Server-Side Client Event Received (client.on) (mocked)'] = function (test) {
+exports['Server-Side Client Event Received (client.on)'] = function (test) {
     var smocket = buildSmocket('serverSide'),
         clientSmocket = buildSmocket('serverSideClient'),
         expectedSessionId = 42,
@@ -217,7 +227,7 @@ exports['Server-Side Client Event Received (client.on) (mocked)'] = function (te
     }, 50);
 };
 
-exports['Server-Side Client Event Sent (client.send) (mocked)'] = function (test) {
+exports['Server-Side Client Event Sent (client.send)'] = function (test) {
     var smocket = buildSmocket('serverSide'),
         clientSmocket = buildSmocket('serverSideClient'),
         resultClient,
@@ -233,6 +243,7 @@ exports['Server-Side Client Event Sent (client.send) (mocked)'] = function (test
     smocket.exec('connection', clientSmocket);
 
     setTimeout(function () {
+        test.equal(clientSmocket.sentData.length, 1);
         test.equal(clientSmocket.sentData[0].name, 'testMe');
         test.equal(clientSmocket.sentData[0].args.length, 1);
         test.equal(clientSmocket.sentData[0].args[0], 42);
@@ -240,7 +251,7 @@ exports['Server-Side Client Event Sent (client.send) (mocked)'] = function (test
     }, 50);
 };
 
-exports['Server-Side Client Event Broadcast (client.broadcast) (mocked)'] = function (test) {
+exports['Server-Side Client Event Broadcast (client.broadcast)'] = function (test) {
     var smocket = buildSmocket('serverSide'),
         clientSmocket = buildSmocket('serverSideClient'),
         resultClient,
@@ -256,6 +267,7 @@ exports['Server-Side Client Event Broadcast (client.broadcast) (mocked)'] = func
     smocket.exec('connection', clientSmocket);
 
     setTimeout(function () {
+        test.equal(clientSmocket.broadcastData.length, 1);
         test.equal(clientSmocket.broadcastData[0].name, 'testMe');
         test.equal(clientSmocket.broadcastData[0].args.length, 1);
         test.equal(clientSmocket.broadcastData[0].args[0], 42);
@@ -263,3 +275,50 @@ exports['Server-Side Client Event Broadcast (client.broadcast) (mocked)'] = func
     }, 50);
 };
 
+exports['Server-Side Event Broadcast (listener.broadcast)'] = function (test) {
+    var smocket = buildSmocket('serverSide'),
+        listener;
+
+    listener = multio.listen(smocket);
+    listener.broadcast('testMe', [42]);
+    listener.broadcast('testMe2', [43, 4]);
+    setTimeout(function () {
+        test.equal(smocket.broadcastData.length, 2);
+        test.equal(smocket.broadcastData[0].data.name, 'testMe');
+        test.equal(smocket.broadcastData[0].data.args.length, 1);
+        test.equal(smocket.broadcastData[0].data.args[0], 42);
+        test.equal(smocket.broadcastData[1].data.name, 'testMe2');
+        test.equal(smocket.broadcastData[1].data.args.length, 2);
+        test.equal(smocket.broadcastData[1].data.args[0], 43);
+        test.equal(smocket.broadcastData[1].data.args[1], 4);
+        test.done();
+    }, 50);
+};
+
+exports['Server-Side Event Broadcast (Except certain Clients) (client.broadcast)'] = function (test) {
+    var smocket = buildSmocket('serverSide'),
+        exceptClient = {},
+        exceptClient2 = {},
+        listener;
+
+    listener = multio.listen(smocket);
+    listener.broadcast('testMe', [42], exceptClient);
+    listener.broadcast('testMe2', [43, 4], [exceptClient, exceptClient2]);
+    setTimeout(function () {
+        test.equal(smocket.broadcastData.length, 2);
+        test.equal(smocket.broadcastData[0].except.length, 1);
+        test.equal(smocket.broadcastData[0].except[0], exceptClient);
+        test.equal(smocket.broadcastData[1].except.length, 2);
+        test.equal(smocket.broadcastData[1].except[0], exceptClient);
+        test.equal(smocket.broadcastData[1].except[1], exceptClient2);
+        test.equal(smocket.broadcastData[0].data.name, 'testMe');
+        test.equal(smocket.broadcastData[0].data.args.length, 1);
+        test.equal(smocket.broadcastData[0].data.args[0], 42);
+        test.equal(smocket.broadcastData[1].data.name, 'testMe2');
+        test.equal(smocket.broadcastData[1].data.args.length, 2);
+        test.equal(smocket.broadcastData[1].data.args[0], 43);
+        test.equal(smocket.broadcastData[1].data.args[1], 4);
+
+        test.done();
+    }, 50);
+};
