@@ -322,3 +322,29 @@ exports['Server-Side Event Broadcast (Except certain Clients) (client.broadcast)
         test.done();
     }, 50);
 };
+
+exports['Server-Side Client Disconnect (client.on(\'$disconnect\', ...))'] = function (test) {
+    var smocket = buildSmocket('serverSide'),
+        clientSmocket = buildSmocket('serverSideClient'),
+        result,
+        expectedResult = 42,
+        listener;
+
+    listener = multio.listen(smocket);
+    
+    listener.on('$connection', function (client) {
+        client.on('$disconnect', function () {
+            result = expectedResult;
+        });
+    });
+
+    // Simulate a new connection:
+    smocket.exec('connection', clientSmocket);
+    clientSmocket.exec('disconnect');
+
+    setTimeout(function () {
+        test.equal(result, expectedResult);
+        test.done();
+    }, 50);
+};
+
