@@ -1,0 +1,3 @@
+A wrapper that aims to simplify client- and server-side JS that utilize Socket.IO.
+See ./idea.js to get an idea of what server-side code might look like.
+See the 'uchat' project for a more comprehensive (albeit messy) example.
