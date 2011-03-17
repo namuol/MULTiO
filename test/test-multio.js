@@ -34,6 +34,52 @@ exports['Basic Handler Tests (on & exec)'] = function (test) {
     }, 50);
 };
 
+exports['Basic Handler Tests (on & exec) (multiple callbacks)'] = function (test) {
+    var num = 0,
+        num2 = 0,
+        num3 = 0,
+        num4 = 0,
+        last = 0,
+        last2 = 0,
+        handler = multio.buildEventHandler();
+
+    handler.on('testMe', function () {
+        num = 42;
+        last = num;
+    });
+    handler.on('testMe', function () {
+        num2 = 64;
+        last = num2;
+    });
+    handler.exec('testMe');
+
+    setTimeout(function () {
+        test.equal(num, 42);
+        test.equal(num2, 64);
+        test.equal(last, 64);
+        test.done();
+    }, 50);
+
+    handler.on('testMe2', [
+        function () {
+            num3 = 64;
+            last2 = num3;
+        },
+        function () {
+            num4 = 42;
+            last2 = num4;
+        }
+    ]);
+    handler.exec('testMe2');
+
+    setTimeout(function () {
+        test.equal(num3, 64);
+        test.equal(num4, 42);
+        test.equal(last2, 42);
+        test.done();
+    }, 50);
+};
+
 buildSmocket = function (type) {
     // Use the buildEventHandler function to create a socket mock (smocket):
     var smocket = multio.buildEventHandler();
