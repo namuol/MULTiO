@@ -57,7 +57,6 @@ exports['Basic Handler Tests (on & exec) (multiple callbacks)'] = function (test
         test.equal(num, 42);
         test.equal(num2, 64);
         test.equal(last, 64);
-        test.done();
     }, 50);
 
     handler.on('testMe2', [
